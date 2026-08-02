@@ -9,7 +9,7 @@ molecule-level cliff existence. During inference, it requires only one molecular
 
 ## Motivation
 
-[![Activity-cliff motivation](docs/assets/activity_cliff_motivation.png)](figures/cliff.pdf)
+[![Activity-cliff motivation](docs/assets/activity_cliff_motivation.png)](cliff.pdf)
 
 Highly similar molecules can exhibit large differences in potency. A conventional
 graph-level predictor may place these molecules close together in representation space,
@@ -17,11 +17,11 @@ whereas pair-dependent models often require a reference molecule at inference. C
 uses molecular pairs only to construct training supervision and preserves graph-only,
 single-molecule inference.
 
-The image above is a preview of the [activity-cliff motivation figure](figures/cliff.pdf).
+The image above is a preview of the [activity-cliff motivation figure](cliff.pdf).
 
 ## Framework
 
-[![CliffRIF pipeline](docs/assets/cliffrif_pipeline.png)](figures/cliffmodel.pdf)
+[![CliffRIF pipeline](docs/assets/cliffrif_pipeline.png)](cliffmodel.pdf)
 
 The pipeline has three stages:
 
@@ -35,7 +35,7 @@ The pipeline has three stages:
 3. **Single-molecule inference:** region annotations and paired reference molecules are
    not required. A test molecule is passed through the GINE encoder and property head.
 
-The image above is a preview of the full [CliffRIF model and data pipeline](figures/cliffmodel.pdf).
+The image above is a preview of the full [CliffRIF model and data pipeline](cliffmodel.pdf).
 
 ## Repository Layout
 
