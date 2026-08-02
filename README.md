@@ -193,15 +193,3 @@ L = lambda_y * L_y + lambda_mask * L_mask + lambda_exist * L_exist
 This separation lets the region and existence tasks regularize the shared encoder without
 making property prediction depend on region labels or reference molecules at inference.
 
-## Citation
-
-If you use this repository, please cite the accompanying manuscript:
-
-```bibtex
-@article{jin2026cliffrif,
-  title   = {CliffRIF: Region-Informed Auxiliary Learning for Activity-Cliff-Aware
-             Molecular Property Prediction},
-  author  = {Jin, Xiaobo and Nguyen, Bach Hoai and Nguyen, Binh P.},
-  year    = {2026}
-}
-```
