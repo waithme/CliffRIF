@@ -9,7 +9,7 @@ molecule-level cliff existence. During inference, it requires only one molecular
 
 ## Motivation
 
-[![Activity-cliff motivation](figures/cliff.png)](cliff.pdf)
+[![Activity-cliff motivation](docs/assets/activity_cliff_motivation.png)](figure/cliff.pdf)
 
 Highly similar molecules can exhibit large differences in potency. A conventional
 graph-level predictor may place these molecules close together in representation space,
@@ -17,11 +17,11 @@ whereas pair-dependent models often require a reference molecule at inference. C
 uses molecular pairs only to construct training supervision and preserves graph-only,
 single-molecule inference.
 
-The image above is a preview of the [activity-cliff motivation figure](cliff.pdf).
+The image above is a preview of the [activity-cliff motivation figure](figure/cliff.pdf).
 
 ## Framework
 
-[![CliffRIF pipeline](figures/cliffmodel.png)](cliffmodel.pdf)
+[![CliffRIF pipeline](docs/assets/cliffrif_pipeline.png)](figure/cliffmodel.pdf)
 
 The pipeline has three stages:
 
@@ -35,18 +35,9 @@ The pipeline has three stages:
 3. **Single-molecule inference:** region annotations and paired reference molecules are
    not required. A test molecule is passed through the GINE encoder and property head.
 
-The image above is a preview of the full [CliffRIF model and data pipeline](cliffmodel.pdf).
+The image above is a preview of the full [CliffRIF model and data pipeline](figure/cliffmodel.pdf).
 
-## Repository Layout
 
-```text
-data_generation/   Leakage-safe MoleculeACE region-label construction
-final_model/       CliffRIF model, pretraining, fine-tuning, and multi-seed runner
-ablation/          Ablation variants and result summarization
-results/           Benchmark and ablation result tables
-visual/            Region-prediction visualization utilities
-writing/           Manuscript figures
-```
 
 ## Requirements
 
@@ -192,4 +183,7 @@ L = lambda_y * L_y + lambda_mask * L_mask + lambda_exist * L_exist
 
 This separation lets the region and existence tasks regularize the shared encoder without
 making property prediction depend on region labels or reference molecules at inference.
+
+
+
 

@@ -9,7 +9,7 @@ from typing import Dict, List
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.nn import GINEConv, global_max_pool, global_mean_pool
+from torch_geometric.nn import GINEConv, global_mean_pool
 
 
 @dataclass
@@ -59,12 +59,12 @@ class GINEMultiScaleRegionDetector(nn.Module):
         self.layers = nn.ModuleList([GINEBlock(h, cfg.dropout) for _ in range(cfg.num_layers)])
         self.mask_heads = nn.ModuleList([Head(h, 1, cfg.dropout)])
         self.region_fusion = Head(h, h, cfg.dropout)
-        self.region_existence_head = Head(3 * h, 1, cfg.dropout)
+        self.region_existence_head = Head(2 * h, 1, cfg.dropout)
         # Activity prediction uses only the final-layer whole-molecule
-        # mean/max representation. Region and existence predictions are
+        # mean representation. Region and existence predictions are
         # auxiliary objectives and do not enter the activity head.
         self.y_head = nn.Sequential(
-            nn.Linear(2 * h, h), nn.LayerNorm(h), nn.ReLU(), nn.Dropout(cfg.dropout),
+            nn.Linear(h, h), nn.LayerNorm(h), nn.ReLU(), nn.Dropout(cfg.dropout),
             nn.Linear(h, cfg.num_tasks),
         )
 
@@ -84,10 +84,7 @@ class GINEMultiScaleRegionDetector(nn.Module):
         denominator = global_mean_pool(probability, batch.batch.long()).clamp_min(1e-6)
         final_region_summary = numerator / denominator
 
-        graph_h = torch.cat([
-            global_mean_pool(final_h, batch.batch.long()),
-            global_max_pool(final_h, batch.batch.long()),
-        ], dim=-1)
+        graph_h = global_mean_pool(final_h, batch.batch.long())
         raw_region_h = self.region_fusion(final_region_summary)
         region_existence_logit = self.region_existence_head(
             torch.cat([graph_h, raw_region_h], dim=-1)
