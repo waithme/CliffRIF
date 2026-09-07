@@ -9,7 +9,7 @@ molecule-level cliff existence. During inference, it requires only one molecular
 
 ## Motivation
 
-[![Activity-cliff motivation](docs/assets/activity_cliff_motivation.png)](figure/cliff.pdf)
+[![Activity-cliff motivation](figure/cliff.png)](figure/cliff.pdf)
 
 Highly similar molecules can exhibit large differences in potency. A conventional
 graph-level predictor may place these molecules close together in representation space,
@@ -21,7 +21,7 @@ The image above is a preview of the [activity-cliff motivation figure](figure/cl
 
 ## Framework
 
-[![CliffRIF pipeline](docs/assets/cliffrif_pipeline.png)](figure/cliffmodel.pdf)
+[![CliffRIF pipeline](figure/cliffmodel.png)](figure/cliffmodel.pdf)
 
 The pipeline has three stages:
 
