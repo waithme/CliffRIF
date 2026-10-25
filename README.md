@@ -1,189 +1,52 @@
 # CliffRIF
 
-CliffRIF is a **region-informed auxiliary-learning framework** for activity-cliff-aware
-molecular property prediction. It converts structural
-differences obtained from matched molecular pairs (MMPs) and a conservative maximum
-common substructure (MCS) fallback into atom-level region supervision. During training,
-the model jointly learns molecular activity, cliff-sensitive atom regions, and
-molecule-level cliff existence. During inference, it requires only one molecular graph.
+Region-informed auxiliary learning for activity-cliff-aware molecular property
+prediction. CliffRIF uses a three-layer GINE encoder with global **mean pooling**
+for property regression. Region and existence tasks supply auxiliary supervision;
+single-molecule inference does not require a reference pair or region annotation.
 
-## Motivation
+## Audited reproducibility package — 2026-10-26
 
-[![Activity-cliff motivation](figure/cliff.png)](figure/cliff.pdf)
+**Start with [REPRODUCIBILITY.md](REPRODUCIBILITY.md).** Download
+[cliffrif_reproducibility_20261026.zip](cliffrif_reproducibility_20261026.zip),
+verify [SHA256SUMS](SHA256SUMS), and extract it. The package contains the canonical
+model code, exact frozen annotations and splits, configuration, environment
+specification, integrity checks, and seed-level results. It also contains code,
+fixed inputs, and results for the supplementary experiments.
 
-Highly similar molecules can exhibit large differences in potency. A conventional
-graph-level predictor may place these molecules close together in representation space,
-whereas pair-dependent models often require a reference molecule at inference. CliffRIF
-uses molecular pairs only to construct training supervision and preserves graph-only,
-single-molecule inference.
+The root-level Python files and `data/` directory predate this audited package.
+They are retained for history. Use the files **inside the package** for the
+revised workflow; legacy defaults and generators are not the canonical entrypoint.
+The package uses equal region weights and mean pooling, and preserves checkpoints
+and predictions by default. No existing baseline code or results were changed.
 
-The image above is a preview of the [activity-cliff motivation figure](figure/cliff.pdf).
+## Experimental scope
 
-## Framework
+The frozen development inputs contain 30,403 training and 3,416 validation rows
+across 30 MoleculeACE targets. Training and validation canonical identities are
+disjoint; official test rows are excluded from construction. The included split
+manifest records every assignment. Official source CSVs are obtained separately
+from the MoleculeACE commit given in the package README.
 
-[![CliffRIF pipeline](figure/cliffmodel.png)](figure/cliffmodel.pdf)
+For the updated matched GINE3 Only comparison, historical Full has lower
+five-seed mean overall RMSE on 18/30 targets and lower cliff RMSE on 18/30 targets.
+Effects vary by dataset. Results do not require, or claim, improvement on every
+dataset. The distributed tables retain each target and seed rather than only
+reporting a cross-target average.
 
-The pipeline has three stages:
+The supplementary threshold study contains seven settings × five model seeds ×
+30 targets, evaluated only on validation data. Six earlier non-nominal seed-0
+runs were reused and 29 seed runs were added. The original thresholds remain
+unchanged. Other distributed supplementary results cover matched GINE3 Only,
+fixed random regions, scratch property/full training, skipping unsupported
+auxiliary labels, and same-model localization/Input×Gradient diagnostics.
 
-1. **Data construction:** official MoleculeACE test rows are removed before any matching
-   or splitting. The remaining official training partition is split into final training
-   and validation subsets. MMP localization and a conservative MCS fallback provide
-   cliff-sensitive atom-region labels.
-2. **Auxiliary-guided training:** a shared three-layer GINE encoder is optimized using
-   property regression, final-layer atom-region localization, and cliff-existence losses.
-   The property head receives only the globally pooled molecular representation.
-3. **Single-molecule inference:** region annotations and paired reference molecules are
-   not required. A test molecule is passed through the GINE encoder and property head.
+Computational region labels are supervision proxies, not verified causal sites.
+The historical Full score records are retained, but its complete original
+per-run invocation and checkpoints were not recovered; this package documents
+an audited workflow and does not claim to reconstruct every historical argument.
+See the package README for experiment-specific limits, source provenance,
+MoleculeACE attribution, and the distinction between validation and test results.
 
-The image above is a preview of the full [CliffRIF model and data pipeline](figure/cliffmodel.pdf).
-
-
-
-## Requirements
-
-The main dependencies are:
-
-- Python 3.10 or later
-- PyTorch
-- PyTorch Geometric
-- RDKit
-- NumPy and pandas
-- scikit-learn
-- python-Levenshtein
-
-Install packages using the method appropriate for your CUDA and PyTorch versions. A
-minimal CPU-oriented installation is:
-
-```bash
-python -m pip install torch torch-geometric rdkit numpy pandas scikit-learn python-Levenshtein
-```
-
-## Data Preparation
-
-Place the 30 official MoleculeACE CSV files in `data/moleculeace/`. Each CSV must retain
-the official split and cliff-label columns.
-
-Generate disjoint training and validation region files from the repository root:
-
-```bash
-python data_generation/build_moleculeace_official_region_datav2.py \
-  --input_dir data/moleculeace \
-  --output data/train_regions.jsonl \
-  --val_output data/val_regions.jsonl \
-  --val_ratio 0.1 \
-  --val_split_seed 0
-```
-
-The preprocessing script removes all official test rows before fragmentation,
-train-validation splitting, reference search, and region localization. Training anchors
-are matched only against final-training references; validation anchors are also matched
-only against final-training references.
-
-## Run the Full Experiment
-
-The following command runs all five seeds (`0 1 2 3 4`) on every MoleculeACE dataset:
-
-```bash
-python final_model/run_multi_ablation.py final \
-  --train_file data/train_regions.jsonl \
-  --val_file data/val_regions.jsonl \
-  --dataset_dir data/moleculeace \
-  --output_root results/final_model \
-  --device cuda \
-  --overwrite
-```
-
-To inspect all generated commands without starting training:
-
-```bash
-python final_model/run_multi_ablation.py final \
-  --train_file data/train_regions.jsonl \
-  --val_file data/val_regions.jsonl \
-  --dataset_dir data/moleculeace \
-  --output_root results/final_model \
-  --device cuda \
-  --dry_run
-```
-
-To run selected seeds or datasets, pass them explicitly:
-
-```bash
-python final_model/run_multi_ablation.py final \
-  --seeds 0 1 2 3 4 \
-  --datasets CHEMBL244_Ki CHEMBL204_Ki \
-  --train_file data/train_regions.jsonl \
-  --val_file data/val_regions.jsonl \
-  --dataset_dir data/moleculeace \
-  --output_root results/final_model \
-  --device cuda
-```
-
-The runner stores checkpoints and per-dataset fine-tuning artifacts in a temporary
-workspace. After each successful seed, it keeps the cleaned summary at:
-
-```text
-results/final_model/final/seed_<seed>/summary.csv
-```
-
-Temporary checkpoints, including `.pt` files, are removed after the corresponding seed
-finishes successfully.
-
-## Run Pretraining and Fine-Tuning Separately
-
-Pretrain the shared model:
-
-```bash
-python final_model/train_gine_region_detector.py \
-  --data_file data/train_regions.jsonl \
-  --val_data_file data/val_regions.jsonl \
-  --output_dir checkpoints/cliffrif_pretrain \
-  --seed 0 \
-  --device cuda
-```
-
-Fine-tune and evaluate one target:
-
-```bash
-python final_model/finetune_gine_region_detector.py \
-  --checkpoint checkpoints/cliffrif_pretrain/best.pt \
-  --dataset CHEMBL244_Ki \
-  --data_file data/train_regions.jsonl \
-  --val_data_file data/val_regions.jsonl \
-  --dataset_dir data/moleculeace \
-  --output_dir results/CHEMBL244_Ki_seed0 \
-  --seed 0 \
-  --device cuda
-```
-
-See [`final_model/cmd.md`](final_model/cmd.md) for commands with the complete set of
-training hyperparameters.
-
-## Results
-
-On 30 MoleculeACE targets, the reported five-seed experiment achieved the best overall
-test RMSE on 24 targets and the best cliff-subset RMSE on 18 targets, with average ranks
-of 1.30 and 1.73, respectively. In the controlled ablation, the full model improved
-cliff-subset RMSE over activity-only training on 21 of 30 targets, with a mean relative
-improvement of 2.96%.
-
-These results should be interpreted within the reported protocol: region annotations are
-computational supervision proxies rather than experimentally validated causal sites, and
-the multi-target pretraining setting contains cross-target molecular overlap.
-
-## Method Summary
-
-For final-layer atom states `H`, CliffRIF computes a soft region representation using
-atom probabilities from the region head. The existence head receives the concatenated
-region and global graph representations, while the property head uses only global
-mean/max pooling. The training objective is:
-
-```text
-L = lambda_y * L_y + lambda_mask * L_mask + lambda_exist * L_exist
-```
-
-This separation lets the region and existence tasks regularize the shared encoder without
-making property prediction depend on region labels or reference molecules at inference.
-
-
-
-
+Code is distributed under the repository MIT license; MoleculeACE attribution
+and its license are included in the package.
